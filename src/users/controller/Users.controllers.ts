@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Header, HttpCode, Param, Post, Put, Query, Redirect, Req, Res} from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Header, HttpCode, HttpStatus, Param, ParseIntPipe, Post, Put, Query, Redirect, Req, Res} from "@nestjs/common";
 import { Request, Response } from "express";
 import {v4 as uuid} from "uuid";
 import { CreateUserDto, UpdateUserDto } from "../dto/user.dto";
@@ -14,9 +14,10 @@ export class UserController{
         const userWithId = {...user, id : uuid()};
         return this.userService.create(userWithId);
     }
-
+    
     @Get()
     async getUsers(@Req() request : Request) : Promise<User[]>{
+        console.log("reached users")
     return this.userService.findAll()
     }
 
@@ -26,6 +27,12 @@ export class UserController{
         return "This is a wildcard User"
     }
 
+    @Get("/filter")
+    getUserByName(@Query("name") name  : string, @Query('age', new ParseIntPipe({errorHttpStatusCode : HttpStatus.NOT_ACCEPTABLE, exceptionFactory : ((error : string) => (new BadRequestException("Validation Error: Age needs to be a number.")))})) age : number) : string{
+        console.log("reached filter")
+        return `User name is ${name} whose age is ${age}`
+    }
+
     @Get(':id')
     async getUserById(@Param() param : any) : Promise<User | {}> {
         const {id} = param;
@@ -33,10 +40,6 @@ export class UserController{
         return user ? user : {}
     }
 
-    @Get()
-    getUserByName(@Query("name") name  : string, @Query('age') age : number) : string{
-        return `User name is ${name} whose age is ${age}`
-    }
     
     @Put(":id")
     updateUser(@Param("id") id : string, @Body() updateUserBody : UpdateUserDto){
